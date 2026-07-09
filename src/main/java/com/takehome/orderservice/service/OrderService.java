@@ -7,7 +7,7 @@ import com.takehome.orderservice.entity.OrderStatus;
 
 import com.takehome.orderservice.exception.InvalidOrderException;
 import com.takehome.orderservice.exception.OrderNotFoundException;
-
+import com.takehome.orderservice.transition.StatusTransitionValidator;
 import com.takehome.orderservice.repository.OrderRepository;
 
 
@@ -29,7 +29,7 @@ public class OrderService {
 
 
     private final OrderRepository orderRepository;
-
+    private final StatusTransitionValidator statusTransitionValidator;
 
     public Order createOrder(
             String customerName,
@@ -149,6 +149,34 @@ public class OrderService {
 
         orderRepository.delete(
                 existingOrder
+        );
+    }
+
+    public Order updateStatus(
+            UUID orderId,
+            OrderStatus newStatus
+    ) {
+
+
+        Order order =
+                getOrderById(
+                        orderId
+                );
+
+
+        statusTransitionValidator.validate(
+                order.getStatus(),
+                newStatus
+        );
+
+
+        order.setStatus(
+                newStatus
+        );
+
+
+        return orderRepository.save(
+                order
         );
     }
 
