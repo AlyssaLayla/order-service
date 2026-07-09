@@ -505,4 +505,84 @@ class OrderServiceTest {
                 any(Order.class)
         );
     }
+
+    @Test
+    void deleteOrder_withExistingId_shouldDeleteOrder() {
+
+        // Arrange
+
+        UUID orderId =
+                UUID.randomUUID();
+
+
+        Order existingOrder =
+                Order.builder()
+                        .orderId(orderId)
+                        .customerName("Andi Wijaya")
+                        .status(OrderStatus.CREATED)
+                        .build();
+
+
+        when(
+                orderRepository.findById(
+                        orderId
+                )
+        ).thenReturn(
+                Optional.of(existingOrder)
+        );
+
+
+        // Act
+
+        orderService.deleteOrder(
+                orderId
+        );
+
+
+        // Assert
+
+        verify(
+                orderRepository,
+                times(1)
+        ).delete(
+                existingOrder
+        );
+    }
+
+    @Test
+    void deleteOrder_withUnknownId_shouldThrowException() {
+
+        // Arrange
+
+        UUID orderId =
+                UUID.randomUUID();
+
+
+        when(
+                orderRepository.findById(
+                        orderId
+                )
+        ).thenReturn(
+                Optional.empty()
+        );
+
+
+        // Act & Assert
+
+        assertThrows(
+                OrderNotFoundException.class,
+                () ->
+                        orderService.deleteOrder(
+                                orderId
+                        )
+        );
+
+
+        verify(
+                orderRepository,
+                never()
+        ).delete(
+                any(Order.class)
+        );
+    }
 }
