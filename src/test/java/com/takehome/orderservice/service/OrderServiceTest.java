@@ -359,4 +359,150 @@ class OrderServiceTest {
                 orderRepository
         ).findAll();
     }
+
+    @Test
+    void updateOrder_withExistingOrder_shouldUpdateOrderDetails() {
+
+        // Arrange
+
+        UUID orderId =
+                UUID.randomUUID();
+
+
+        Order existingOrder =
+                Order.builder()
+                        .orderId(orderId)
+                        .customerName("Old Customer")
+                        .items(
+                                List.of(
+                                        LineItem.builder()
+                                                .productName("Old Item")
+                                                .quantity(1)
+                                                .unitPrice(
+                                                        BigDecimal.valueOf(10)
+                                                )
+                                                .build()
+                                )
+                        )
+                        .status(OrderStatus.CREATED)
+                        .totalAmount(
+                                BigDecimal.valueOf(10)
+                        )
+                        .build();
+
+
+        List<LineItem> updatedItems =
+                List.of(
+                        LineItem.builder()
+                                .productName("Apple")
+                                .quantity(3)
+                                .unitPrice(
+                                        BigDecimal.valueOf(2)
+                                )
+                                .build()
+                );
+
+
+        when(
+                orderRepository.findById(orderId)
+        ).thenReturn(
+                Optional.of(existingOrder)
+        );
+
+
+        when(
+                orderRepository.save(
+                        any(Order.class)
+                )
+        ).thenAnswer(
+                invocation ->
+                        invocation.getArgument(0)
+        );
+
+
+        // Act
+
+        Order result =
+                orderService.updateOrder(
+                        orderId,
+                        "New Customer",
+                        updatedItems
+                );
+
+
+        // Assert
+
+        assertEquals(
+                "New Customer",
+                result.getCustomerName()
+        );
+
+
+        assertEquals(
+                1,
+                result.getItems().size()
+        );
+
+
+        assertEquals(
+                BigDecimal.valueOf(6),
+                result.getTotalAmount()
+        );
+
+
+        verify(
+                orderRepository
+        ).save(
+                existingOrder
+        );
+    }
+
+    @Test
+    void updateOrder_withUnknownId_shouldThrowException() {
+
+        // Arrange
+
+        UUID orderId =
+                UUID.randomUUID();
+
+
+        List<LineItem> items =
+                List.of(
+                        LineItem.builder()
+                                .productName("Apple")
+                                .quantity(1)
+                                .unitPrice(
+                                        BigDecimal.valueOf(2)
+                                )
+                                .build()
+                );
+
+
+        when(
+                orderRepository.findById(orderId)
+        ).thenReturn(
+                Optional.empty()
+        );
+
+
+        // Act & Assert
+
+        assertThrows(
+                OrderNotFoundException.class,
+                () ->
+                        orderService.updateOrder(
+                                orderId,
+                                "Customer",
+                                items
+                        )
+        );
+
+
+        verify(
+                orderRepository,
+                never()
+        ).save(
+                any(Order.class)
+        );
+    }
 }
