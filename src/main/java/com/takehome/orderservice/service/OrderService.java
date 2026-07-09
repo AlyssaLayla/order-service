@@ -136,6 +136,22 @@ public class OrderService {
         );
     }
 
+    public void deleteOrder(
+            UUID orderId
+    ) {
+
+
+        Order existingOrder =
+                getOrderById(
+                        orderId
+                );
+
+
+        orderRepository.delete(
+                existingOrder
+        );
+    }
+
     private BigDecimal calculateTotalAmount(
             List<LineItem> items
     ) {
