@@ -822,4 +822,90 @@ class OrderServiceTest {
                 any(Order.class)
         );
     }
+
+    @Test
+    void updateOrder_withPaidOrder_shouldThrowException() {
+
+
+        // Arrange
+
+        UUID orderId =
+                UUID.randomUUID();
+
+
+        Order existingOrder =
+                Order.builder()
+                        .orderId(
+                                orderId
+                        )
+                        .customerName(
+                                "Andi Wijaya"
+                        )
+                        .status(
+                                OrderStatus.PAID
+                        )
+                        .items(
+                                List.of(
+                                        LineItem.builder()
+                                                .productName(
+                                                        "Apple"
+                                                )
+                                                .quantity(
+                                                        1
+                                                )
+                                                .unitPrice(
+                                                        BigDecimal.valueOf(5)
+                                                )
+                                                .build()
+                                )
+                        )
+                        .build();
+
+
+        List<LineItem> updatedItems =
+                List.of(
+                        LineItem.builder()
+                                .productName(
+                                        "Bread"
+                                )
+                                .quantity(
+                                        2
+                                )
+                                .unitPrice(
+                                        BigDecimal.valueOf(10)
+                                )
+                                .build()
+                );
+
+
+        when(
+                orderRepository.findById(
+                        orderId
+                )
+        ).thenReturn(
+                Optional.of(existingOrder)
+        );
+
+
+        // Act & Assert
+
+        assertThrows(
+                InvalidOrderException.class,
+                () ->
+                        orderService.updateOrder(
+                                orderId,
+                                "New Customer",
+                                updatedItems
+                        )
+        );
+
+
+        verify(
+                orderRepository,
+                never()
+        ).save(
+                any(Order.class)
+        );
+    }
+
 }
