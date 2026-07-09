@@ -6,20 +6,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.takehome.orderservice.entity.LineItem;
 import com.takehome.orderservice.entity.Order;
 import com.takehome.orderservice.entity.OrderStatus;
-
 import com.takehome.orderservice.service.OrderService;
-
+import com.takehome.orderservice.exception.OrderNotFoundException;
+import com.takehome.orderservice.exception.InvalidOrderException;
 
 import org.junit.jupiter.api.Test;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-
-
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-
 import org.springframework.test.web.servlet.MockMvc;
 
 
@@ -459,5 +455,118 @@ class OrderControllerTest {
         ).deleteOrder(
                 orderId
         );
+    }
+
+    @Test
+    void getOrderById_whenOrderNotFound_shouldReturnNotFound()
+            throws Exception {
+
+
+        // Arrange
+
+        UUID orderId =
+                UUID.randomUUID();
+
+
+        when(
+                orderService.getOrderById(
+                        orderId
+                )
+        ).thenThrow(
+                new OrderNotFoundException(
+                        "Order not found"
+                )
+        );
+
+
+        // Act & Assert
+
+        mockMvc.perform(
+                        get(
+                                "/api/orders/{id}",
+                                orderId
+                        )
+                )
+
+                .andExpect(
+                        status()
+                                .isNotFound()
+                )
+
+                .andExpect(
+                        jsonPath("$.error")
+                                .value(
+                                        "ORDER_NOT_FOUND"
+                                )
+                )
+
+                .andExpect(
+                        jsonPath("$.message")
+                                .value(
+                                        "Order not found"
+                                )
+                );
+    }
+
+    @Test
+    void createOrder_withInvalidInput_shouldReturnBadRequest()
+            throws Exception {
+
+
+        // Arrange
+
+        when(
+                orderService.createOrder(
+                        any(),
+                        any()
+                )
+        ).thenThrow(
+                new InvalidOrderException(
+                        "Order must contain at least one item"
+                )
+        );
+
+
+        String request =
+                """
+                {
+                    "customerName":"Andi",
+                    "items":[]
+                }
+                """;
+
+
+        // Act & Assert
+
+        mockMvc.perform(
+                        post(
+                                "/api/orders"
+                        )
+                                .contentType(
+                                        "application/json"
+                                )
+                                .content(
+                                        request
+                                )
+                )
+
+                .andExpect(
+                        status()
+                                .isBadRequest()
+                )
+
+                .andExpect(
+                        jsonPath("$.error")
+                                .value(
+                                        "INVALID_ORDER"
+                                )
+                )
+
+                .andExpect(
+                        jsonPath("$.message")
+                                .value(
+                                        "Order must contain at least one item"
+                                )
+                );
     }
 }
