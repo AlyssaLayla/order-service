@@ -6,12 +6,14 @@ import com.takehome.orderservice.entity.OrderStatus;
 import com.takehome.orderservice.repository.OrderRepository;
 import com.takehome.orderservice.exception.InvalidOrderException;
 import com.takehome.orderservice.exception.OrderNotFoundException;
-
+import com.takehome.orderservice.transition.StatusTransitionValidator;
+import com.takehome.orderservice.exception.InvalidStatusTransitionException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.List;
@@ -31,6 +33,9 @@ class OrderServiceTest {
     @Mock
     private OrderRepository orderRepository;
 
+    @Spy
+    private StatusTransitionValidator statusTransitionValidator =
+            new StatusTransitionValidator();
 
     @InjectMocks
     private OrderService orderService;
@@ -582,6 +587,122 @@ class OrderServiceTest {
                 orderRepository,
                 never()
         ).delete(
+                any(Order.class)
+        );
+    }
+
+    @Test
+    void updateStatus_withValidTransition_shouldUpdateOrderStatus() {
+
+
+        // Arrange
+
+        UUID orderId =
+                UUID.randomUUID();
+
+
+        Order order =
+                Order.builder()
+                        .orderId(orderId)
+                        .status(
+                                OrderStatus.CREATED
+                        )
+                        .build();
+
+
+        when(
+                orderRepository.findById(
+                        orderId
+                )
+        ).thenReturn(
+                Optional.of(order)
+        );
+
+
+        when(
+                orderRepository.save(
+                        any(Order.class)
+                )
+        ).thenAnswer(
+                invocation ->
+                        invocation.getArgument(0)
+        );
+
+
+        // Act
+
+        Order result =
+                orderService.updateStatus(
+                        orderId,
+                        OrderStatus.PAID
+                );
+
+
+        // Assert
+
+        assertEquals(
+                OrderStatus.PAID,
+                result.getStatus()
+        );
+
+
+        verify(
+                statusTransitionValidator
+        ).validate(
+                OrderStatus.CREATED,
+                OrderStatus.PAID
+        );
+
+
+        verify(
+                orderRepository
+        ).save(order);
+    }
+
+    @Test
+    void updateStatus_withInvalidTransition_shouldThrowException() {
+
+
+        // Arrange
+
+        UUID orderId =
+                UUID.randomUUID();
+
+
+        Order order =
+                Order.builder()
+                        .orderId(orderId)
+                        .status(
+                                OrderStatus.CREATED
+                        )
+                        .build();
+
+
+        when(
+                orderRepository.findById(
+                        orderId
+                )
+        ).thenReturn(
+                Optional.of(order)
+        );
+
+
+        // Act & Assert
+
+        assertThrows(
+                InvalidStatusTransitionException.class,
+                () ->
+                        orderService.updateStatus(
+                                orderId,
+                                OrderStatus.SHIPPED
+                        )
+        );
+
+
+        verify(
+                orderRepository,
+                never()
+        ).save(
                 any(Order.class)
         );
     }
