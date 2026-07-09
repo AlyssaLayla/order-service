@@ -569,4 +569,100 @@ class OrderControllerTest {
                                 )
                 );
     }
+
+    @Test
+    void updateStatus_shouldReturnUpdatedOrder()
+            throws Exception {
+
+
+        // Arrange
+
+        UUID orderId =
+                UUID.randomUUID();
+
+
+        Order updatedOrder =
+                Order.builder()
+                        .orderId(
+                                orderId
+                        )
+                        .customerName(
+                                "Andi Wijaya"
+                        )
+                        .items(
+                                List.of(
+                                        LineItem.builder()
+                                                .productName(
+                                                        "Apple"
+                                                )
+                                                .quantity(
+                                                        2
+                                                )
+                                                .unitPrice(
+                                                        BigDecimal.valueOf(5)
+                                                )
+                                                .build()
+                                )
+                        )
+                        .status(
+                                OrderStatus.PAID
+                        )
+                        .totalAmount(
+                                BigDecimal.valueOf(10)
+                        )
+                        .build();
+
+
+        when(
+                orderService.updateStatus(
+                        orderId,
+                        OrderStatus.PAID
+                )
+        ).thenReturn(
+                updatedOrder
+        );
+
+
+        String request =
+                """
+                {
+                    "status":"PAID"
+                }
+                """;
+
+
+        // Act & Assert
+
+        mockMvc.perform(
+                        patch(
+                                "/api/orders/{id}/status",
+                                orderId
+                        )
+                                .contentType(
+                                        "application/json"
+                                )
+                                .content(
+                                        request
+                                )
+                )
+
+                .andExpect(
+                        status()
+                                .isOk()
+                )
+
+                .andExpect(
+                        jsonPath("$.status")
+                                .value(
+                                        "PAID"
+                                )
+                );
+
+        verify(
+                orderService
+        ).updateStatus(
+                orderId,
+                OrderStatus.PAID
+        );
+    }
 }
