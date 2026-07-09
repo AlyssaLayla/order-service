@@ -5,6 +5,7 @@ import com.takehome.orderservice.entity.Order;
 import com.takehome.orderservice.entity.OrderStatus;
 import com.takehome.orderservice.repository.OrderRepository;
 import com.takehome.orderservice.exception.InvalidOrderException;
+import com.takehome.orderservice.exception.OrderNotFoundException;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,10 +13,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -65,8 +66,17 @@ class OrderServiceTest {
                         any(Order.class)
                 )
         ).thenAnswer(
-                invocation ->
-                        invocation.getArgument(0)
+                invocation -> {
+
+                    Order savedOrder =
+                            invocation.getArgument(0);
+
+                    savedOrder.setOrderId(
+                            UUID.randomUUID()
+                    );
+
+                    return savedOrder;
+                }
         );
 
 
@@ -221,4 +231,132 @@ class OrderServiceTest {
         );
     }
 
+    @Test
+    void getOrderById_withExistingId_shouldReturnOrder() {
+
+        // Arrange
+
+        UUID orderId =
+                UUID.randomUUID();
+
+
+        Order order =
+                Order.builder()
+                        .orderId(orderId)
+                        .customerName("Andi Wijaya")
+                        .status(OrderStatus.CREATED)
+                        .totalAmount(
+                                BigDecimal.valueOf(10)
+                        )
+                        .build();
+
+
+        when(
+                orderRepository.findById(orderId)
+        ).thenReturn(
+                Optional.of(order)
+        );
+
+
+        // Act
+
+        Order result =
+                orderService.getOrderById(
+                        orderId
+                );
+
+
+        // Assert
+
+        assertEquals(
+                orderId,
+                result.getOrderId()
+        );
+
+
+        assertEquals(
+                "Andi Wijaya",
+                result.getCustomerName()
+        );
+
+
+        verify(
+                orderRepository
+        ).findById(orderId);
+    }
+
+    @Test
+    void getOrderById_withUnknownId_shouldThrowException() {
+
+        // Arrange
+
+        UUID orderId =
+                UUID.randomUUID();
+
+
+        when(
+                orderRepository.findById(orderId)
+        ).thenReturn(
+                Optional.empty()
+        );
+
+
+        // Act & Assert
+
+        assertThrows(
+                OrderNotFoundException.class,
+                () ->
+                        orderService.getOrderById(
+                                orderId
+                        )
+        );
+
+
+        verify(
+                orderRepository
+        ).findById(orderId);
+    }
+
+    @Test
+    void getOrders_shouldReturnAllOrders() {
+
+        // Arrange
+
+        List<Order> orders =
+                List.of(
+                        Order.builder()
+                                .customerName("Andi")
+                                .build(),
+
+                        Order.builder()
+                                .customerName("Budi")
+                                .build()
+                );
+
+
+        when(
+                orderRepository.findAll()
+        ).thenReturn(
+                orders
+        );
+
+
+        // Act
+
+        List<Order> result =
+                orderService.getOrders();
+
+
+        // Assert
+
+        assertEquals(
+                2,
+                result.size()
+        );
+
+
+        verify(
+                orderRepository
+        ).findAll();
+    }
 }
