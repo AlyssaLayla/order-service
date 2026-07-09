@@ -114,6 +114,16 @@ public class OrderService {
                         orderId
                 );
 
+        if (
+                existingOrder.getStatus()
+                        != OrderStatus.CREATED
+        ) {
+
+
+            throw new InvalidOrderException(
+                    "Paid order items cannot be modified"
+            );
+        }
 
         existingOrder.setCustomerName(
                 customerName
