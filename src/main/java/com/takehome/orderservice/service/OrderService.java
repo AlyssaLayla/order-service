@@ -5,6 +5,7 @@ import com.takehome.orderservice.entity.LineItem;
 import com.takehome.orderservice.entity.Order;
 import com.takehome.orderservice.entity.OrderStatus;
 import com.takehome.orderservice.repository.OrderRepository;
+import com.takehome.orderservice.exception.InvalidOrderException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +29,10 @@ public class OrderService {
             String customerName,
             List<LineItem> items
     ) {
+
+        validateOrder(
+                items
+        );
 
 
         BigDecimal totalAmount =
@@ -69,4 +74,49 @@ public class OrderService {
 
         return orderRepository.save(order);
     }
+
+    private void validateOrder(
+            List<LineItem> items
+    ) {
+
+
+        if (
+                items == null ||
+                        items.isEmpty()
+        ) {
+
+            throw new InvalidOrderException(
+                    "Order must contain at least one item"
+            );
+        }
+
+
+        for (LineItem item : items) {
+
+
+            if (
+                    item.getQuantity() == null ||
+                            item.getQuantity() <= 0
+            ) {
+
+                throw new InvalidOrderException(
+                        "Item quantity must be positive"
+                );
+            }
+
+
+            if (
+                    item.getUnitPrice() == null ||
+                            item.getUnitPrice()
+                                    .compareTo(BigDecimal.ZERO)
+                                    < 0
+            ) {
+
+                throw new InvalidOrderException(
+                        "Item price cannot be negative"
+                );
+            }
+        }
+    }
+
 }
