@@ -1,22 +1,16 @@
 package com.takehome.orderservice.controller;
 
-
 import com.takehome.orderservice.dto.request.CreateOrderRequest;
 import com.takehome.orderservice.dto.request.UpdateOrderRequest;
-
+import com.takehome.orderservice.dto.request.UpdateStatusRequest;
 import com.takehome.orderservice.dto.response.OrderResponse;
-
 import com.takehome.orderservice.mapper.OrderMapper;
-
 import com.takehome.orderservice.service.OrderService;
-
 
 import lombok.RequiredArgsConstructor;
 
-
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
 
 import java.util.List;
 import java.util.UUID;
@@ -107,4 +101,21 @@ public class OrderController {
                 id
         );
     }
+
+    @PatchMapping("/{id}/status")
+    public OrderResponse updateStatus(
+            @PathVariable UUID id,
+
+            @RequestBody UpdateStatusRequest request
+    ) {
+
+
+        return OrderMapper.toResponse(
+                orderService.updateStatus(
+                        id,
+                        request.status()
+                )
+        );
+    }
+
 }
