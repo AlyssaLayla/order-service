@@ -113,7 +113,8 @@ public class OrderController {
         return OrderMapper.toResponse(
                 orderService.updateStatus(
                         id,
-                        request.status()
+                        request.status(),
+                        request.reason()
                 )
         );
     }

@@ -39,6 +39,7 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
+    private String cancellationReason;
 
     private BigDecimal totalAmount;
 

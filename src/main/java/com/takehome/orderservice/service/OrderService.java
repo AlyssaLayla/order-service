@@ -7,8 +7,10 @@ import com.takehome.orderservice.entity.OrderStatus;
 
 import com.takehome.orderservice.exception.InvalidOrderException;
 import com.takehome.orderservice.exception.OrderNotFoundException;
-import com.takehome.orderservice.transition.StatusTransitionValidator;
+
 import com.takehome.orderservice.repository.OrderRepository;
+
+import com.takehome.orderservice.transition.StatusTransitionValidator;
 
 
 import lombok.RequiredArgsConstructor;
@@ -29,7 +31,10 @@ public class OrderService {
 
 
     private final OrderRepository orderRepository;
+
+
     private final StatusTransitionValidator statusTransitionValidator;
+
 
     public Order createOrder(
             String customerName,
@@ -40,12 +45,6 @@ public class OrderService {
         validateOrder(
                 items
         );
-
-
-        BigDecimal totalAmount =
-                calculateTotalAmount(
-                        items
-                );
 
 
         Order order =
@@ -60,7 +59,9 @@ public class OrderService {
                                 OrderStatus.CREATED
                         )
                         .totalAmount(
-                                totalAmount
+                                calculateTotalAmount(
+                                        items
+                                )
                         )
                         .build();
 
@@ -92,9 +93,9 @@ public class OrderService {
     public List<Order> getOrders() {
 
 
-        return orderRepository
-                .findAll();
+        return orderRepository.findAll();
     }
+
 
     public Order updateOrder(
             UUID orderId,
@@ -136,6 +137,7 @@ public class OrderService {
         );
     }
 
+
     public void deleteOrder(
             UUID orderId
     ) {
@@ -152,9 +154,32 @@ public class OrderService {
         );
     }
 
+
+    // Used for normal transitions:
+    // CREATED -> PAID
+    // PAID -> SHIPPED
+    // SHIPPED -> DELIVERED
+
     public Order updateStatus(
             UUID orderId,
             OrderStatus newStatus
+    ) {
+
+
+        return updateStatus(
+                orderId,
+                newStatus,
+                null
+        );
+    }
+
+
+    // Used when cancellation reason is required
+
+    public Order updateStatus(
+            UUID orderId,
+            OrderStatus newStatus,
+            String cancellationReason
     ) {
 
 
@@ -170,6 +195,30 @@ public class OrderService {
         );
 
 
+        if (
+                newStatus == OrderStatus.CANCELLED
+        ) {
+
+
+            if (
+                    cancellationReason == null
+                            ||
+                            cancellationReason.isBlank()
+            ) {
+
+
+                throw new InvalidOrderException(
+                        "Cancellation reason is required"
+                );
+            }
+
+
+            order.setCancellationReason(
+                    cancellationReason
+            );
+        }
+
+
         order.setStatus(
                 newStatus
         );
@@ -179,6 +228,7 @@ public class OrderService {
                 order
         );
     }
+
 
     private BigDecimal calculateTotalAmount(
             List<LineItem> items
@@ -208,7 +258,8 @@ public class OrderService {
 
 
         if (
-                items == null ||
+                items == null
+                        ||
                         items.isEmpty()
         ) {
 
@@ -226,7 +277,8 @@ public class OrderService {
 
 
             if (
-                    item.getQuantity() == null ||
+                    item.getQuantity() == null
+                            ||
                             item.getQuantity() <= 0
             ) {
 
@@ -238,7 +290,8 @@ public class OrderService {
 
 
             if (
-                    item.getUnitPrice() == null ||
+                    item.getUnitPrice() == null
+                            ||
                             item.getUnitPrice()
                                     .compareTo(
                                             BigDecimal.ZERO
