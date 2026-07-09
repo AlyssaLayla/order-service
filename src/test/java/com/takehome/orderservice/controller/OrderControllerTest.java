@@ -615,8 +615,9 @@ class OrderControllerTest {
 
         when(
                 orderService.updateStatus(
-                        orderId,
-                        OrderStatus.PAID
+                        eq(orderId),
+                        eq(OrderStatus.PAID),
+                        any()
                 )
         ).thenReturn(
                 updatedOrder
@@ -658,11 +659,13 @@ class OrderControllerTest {
                                 )
                 );
 
+
         verify(
                 orderService
         ).updateStatus(
-                orderId,
-                OrderStatus.PAID
+                eq(orderId),
+                eq(OrderStatus.PAID),
+                any()
         );
     }
 }

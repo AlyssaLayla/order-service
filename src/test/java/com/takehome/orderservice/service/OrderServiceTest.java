@@ -706,4 +706,120 @@ class OrderServiceTest {
                 any(Order.class)
         );
     }
+
+    @Test
+    void updateStatus_toCancelledWithReason_shouldCancelOrder() {
+
+
+        // Arrange
+
+        UUID orderId =
+                UUID.randomUUID();
+
+
+        Order order =
+                Order.builder()
+                        .orderId(orderId)
+                        .status(
+                                OrderStatus.CREATED
+                        )
+                        .build();
+
+
+        when(
+                orderRepository.findById(
+                        orderId
+                )
+        ).thenReturn(
+                Optional.of(order)
+        );
+
+
+        when(
+                orderRepository.save(
+                        any(Order.class)
+                )
+        ).thenAnswer(
+                invocation ->
+                        invocation.getArgument(0)
+        );
+
+
+        // Act
+
+        Order result =
+                orderService.updateStatus(
+                        orderId,
+                        OrderStatus.CANCELLED,
+                        "Customer changed mind"
+                );
+
+
+        // Assert
+
+        assertEquals(
+                OrderStatus.CANCELLED,
+                result.getStatus()
+        );
+
+
+        assertEquals(
+                "Customer changed mind",
+                result.getCancellationReason()
+        );
+
+
+        verify(
+                orderRepository
+        ).save(order);
+    }
+
+    @Test
+    void updateStatus_toCancelledWithoutReason_shouldThrowException() {
+
+
+        // Arrange
+
+        UUID orderId =
+                UUID.randomUUID();
+
+
+        Order order =
+                Order.builder()
+                        .orderId(orderId)
+                        .status(
+                                OrderStatus.CREATED
+                        )
+                        .build();
+
+
+        when(
+                orderRepository.findById(
+                        orderId
+                )
+        ).thenReturn(
+                Optional.of(order)
+        );
+
+
+        // Act & Assert
+
+        assertThrows(
+                InvalidOrderException.class,
+                () ->
+                        orderService.updateStatus(
+                                orderId,
+                                OrderStatus.CANCELLED,
+                                null
+                        )
+        );
+
+
+        verify(
+                orderRepository,
+                never()
+        ).save(
+                any(Order.class)
+        );
+    }
 }
