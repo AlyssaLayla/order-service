@@ -96,6 +96,45 @@ public class OrderService {
                 .findAll();
     }
 
+    public Order updateOrder(
+            UUID orderId,
+            String customerName,
+            List<LineItem> items
+    ) {
+
+
+        validateOrder(
+                items
+        );
+
+
+        Order existingOrder =
+                getOrderById(
+                        orderId
+                );
+
+
+        existingOrder.setCustomerName(
+                customerName
+        );
+
+
+        existingOrder.setItems(
+                items
+        );
+
+
+        existingOrder.setTotalAmount(
+                calculateTotalAmount(
+                        items
+                )
+        );
+
+
+        return orderRepository.save(
+                existingOrder
+        );
+    }
 
     private BigDecimal calculateTotalAmount(
             List<LineItem> items
