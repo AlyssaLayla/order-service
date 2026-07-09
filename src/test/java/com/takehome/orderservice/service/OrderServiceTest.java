@@ -4,6 +4,7 @@ import com.takehome.orderservice.entity.LineItem;
 import com.takehome.orderservice.entity.Order;
 import com.takehome.orderservice.entity.OrderStatus;
 import com.takehome.orderservice.repository.OrderRepository;
+import com.takehome.orderservice.exception.InvalidOrderException;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -116,4 +117,108 @@ class OrderServiceTest {
                 any(Order.class)
         );
     }
+
+    @Test
+    void createOrder_withEmptyItems_shouldThrowException() {
+
+        // Arrange
+
+        List<LineItem> items =
+                List.of();
+
+
+        // Act & Assert
+
+        assertThrows(
+                InvalidOrderException.class,
+                () ->
+                        orderService.createOrder(
+                                "Andi Wijaya",
+                                items
+                        )
+        );
+
+
+        verify(
+                orderRepository,
+                never()
+        ).save(
+                any(Order.class)
+        );
+    }
+
+    @Test
+    void createOrder_withNegativeQuantity_shouldThrowException() {
+
+        // Arrange
+
+        List<LineItem> items =
+                List.of(
+                        LineItem.builder()
+                                .productName("Apple")
+                                .quantity(-3)
+                                .unitPrice(
+                                        BigDecimal.valueOf(0.50)
+                                )
+                                .build()
+                );
+
+
+        // Act & Assert
+
+        assertThrows(
+                InvalidOrderException.class,
+                () ->
+                        orderService.createOrder(
+                                "Andi Wijaya",
+                                items
+                        )
+        );
+
+
+        verify(
+                orderRepository,
+                never()
+        ).save(
+                any(Order.class)
+        );
+    }
+
+    @Test
+    void createOrder_withNegativeUnitPrice_shouldThrowException() {
+
+        // Arrange
+
+        List<LineItem> items =
+                List.of(
+                        LineItem.builder()
+                                .productName("Apple")
+                                .quantity(3)
+                                .unitPrice(
+                                        BigDecimal.valueOf(-0.50)
+                                )
+                                .build()
+                );
+
+
+        // Act & Assert
+
+        assertThrows(
+                InvalidOrderException.class,
+                () ->
+                        orderService.createOrder(
+                                "Andi Wijaya",
+                                items
+                        )
+        );
+
+
+        verify(
+                orderRepository,
+                never()
+        ).save(
+                any(Order.class)
+        );
+    }
+
 }
